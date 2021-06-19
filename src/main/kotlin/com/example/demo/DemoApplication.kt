@@ -106,7 +106,7 @@ class UserHandler(private val userRepository: UserRepository) {
       ServerResponse.ok().body(userRepository.all(), User::class.java)
 }
 
-@Configuration
+@Configuration(proxyBeanMethods=false)
 class DatabaseConfiguration : AbstractR2dbcConfiguration() {
 
   @Bean
