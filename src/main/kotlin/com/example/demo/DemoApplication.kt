@@ -7,11 +7,10 @@ import am.ik.yavi.core.Validator
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration
 import io.r2dbc.postgresql.PostgresqlConnectionFactory
 import io.r2dbc.spi.ConnectionFactory
+import java.util.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
-import java.util.*
 import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -26,18 +25,18 @@ import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.data.r2dbc.mapping.R2dbcMappingContext
 import org.springframework.data.relational.core.mapping.NamingStrategy
-import org.springframework.nativex.hint.AccessBits
-import org.springframework.nativex.hint.TypeHint
+//import org.springframework.nativex.hint.AccessBits
+//import org.springframework.nativex.hint.TypeHint
 import org.springframework.stereotype.Component
 import org.springframework.util.Assert
 import org.springframework.web.reactive.function.server.*
 import org.springframework.web.reactive.function.server.ServerResponse.badRequest
 import org.springframework.web.reactive.function.server.ServerResponse.ok
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
-// Reflection entry required due to how Coroutines generate bytecode with an Object return type, see https://github.com/spring-projects/spring-framework/issues/21546 related issue
-@TypeHint(types = [User::class, NewUser::class], access = AccessBits.FULL_REFLECTION)
+// Reflection entry required due to how Coroutines generate bytecode with an Object return type, see
+// https://github.com/spring-projects/spring-framework/issues/21546 related issue
+//@TypeHint(types = [User::class, NewUser::class], access = AccessBits.FULL_REFLECTION)
 @ConfigurationPropertiesScan("com.example.demo")
 @SpringBootApplication
 class DemoApplication
@@ -75,20 +74,24 @@ class MonoValidator<T : Any>(private val validator: Validator<T>) {
 inline suspend fun <reified T : Any> parseAndValidateRequest(
     request: ServerRequest,
     validator: MonoValidator<T>
-): T = request.bodyToMono<T>()
-  .flatMap { validator.run { it.validate() } }
-  .awaitSingle()
+): T = request.bodyToMono<T>().flatMap { validator.run { it.validate() } }.awaitSingle()
 
 data class NewUser(val name: String, val age: Int)
 
 @Configuration
-class GreetRoute {
+class RouterConfig {
   @Bean
-  fun route(userRepository: UserRepository, userHandler: UserHandler) = coRouter {
-    GET("/greet") { _ -> ServerResponse.ok().bodyValueAndAwait("Hello, world!") }
+  fun route(greetHandler: GreetHandler, userHandler: UserHandler) = coRouter {
+    GET("/greet", greetHandler::greet)
     POST("/user", userHandler::addUser)
     GET("/users", userHandler::fetchUsers)
   }
+}
+
+@Component
+class GreetHandler {
+  suspend fun greet(serverRequest: ServerRequest): ServerResponse =
+      ok().bodyValueAndAwait("Hello, world!")
 }
 
 @Component
@@ -120,15 +123,16 @@ class UserHandler(private val userRepository: UserRepository) {
 @ConstructorBinding
 @ConfigurationProperties(prefix = "postgres")
 data class DatabaseConfigurationProperties(
-  val host: String,
-  val port: Int,
-  val database: String,
-  val username: String,
-  val password: String
+    val host: String,
+    val port: Int,
+    val database: String,
+    val username: String,
+    val password: String
 )
 
 @Configuration(proxyBeanMethods = false)
-class DatabaseConfiguration(private val config: DatabaseConfigurationProperties) : AbstractR2dbcConfiguration() {
+class DatabaseConfiguration(private val config: DatabaseConfigurationProperties) :
+    AbstractR2dbcConfiguration() {
 
   @Bean
   override fun connectionFactory(): ConnectionFactory {
@@ -173,9 +177,5 @@ class UserRepository(private val r2dbcEntityTemplate: R2dbcEntityTemplate) {
   }
 
   suspend fun all(): Flow<User> =
-    r2dbcEntityTemplate
-      .select(User::class.java)
-      .from("users")
-      .all()
-      .asFlow()
+      r2dbcEntityTemplate.select(User::class.java).from("users").all().asFlow()
 }
