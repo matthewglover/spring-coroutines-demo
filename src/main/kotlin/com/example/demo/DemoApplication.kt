@@ -25,8 +25,8 @@ import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.data.r2dbc.mapping.R2dbcMappingContext
 import org.springframework.data.relational.core.mapping.NamingStrategy
-//import org.springframework.nativex.hint.AccessBits
-//import org.springframework.nativex.hint.TypeHint
+import org.springframework.nativex.hint.AccessBits
+import org.springframework.nativex.hint.TypeHint
 import org.springframework.stereotype.Component
 import org.springframework.util.Assert
 import org.springframework.web.reactive.function.server.*
@@ -36,7 +36,7 @@ import reactor.core.publisher.Mono
 
 // Reflection entry required due to how Coroutines generate bytecode with an Object return type, see
 // https://github.com/spring-projects/spring-framework/issues/21546 related issue
-//@TypeHint(types = [User::class, NewUser::class], access = AccessBits.FULL_REFLECTION)
+@TypeHint(types = [User::class, NewUser::class], access = AccessBits.FULL_REFLECTION)
 @ConfigurationPropertiesScan("com.example.demo")
 @SpringBootApplication
 class DemoApplication
