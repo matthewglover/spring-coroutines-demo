@@ -1,5 +1,10 @@
 package com.example.demo
 
+import com.example.demo.features.greet.GreetHandler
+import com.example.demo.features.users.User
+import com.example.demo.features.users.UserHandler
+import com.example.demo.features.users.UserRepository
+import com.example.demo.filters.CreateRequestData
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flow
@@ -12,10 +17,10 @@ class UserHandlerTest {
   fun `simple test or route greet`() {
     val routerConfig = RouterConfig()
     val greetHandler = GreetHandler()
-    val createContext = CreateContext()
+    val createRequestData = CreateRequestData()
     val userRepository = mockk<UserRepository>()
     val userHandler = UserHandler(userRepository)
-    val routerFunction = routerConfig.route(greetHandler, userHandler, createContext)
+    val routerFunction = routerConfig.route(greetHandler, userHandler, createRequestData)
 
     val client = WebTestClient.bindToRouterFunction(routerFunction).build()
 
@@ -30,13 +35,13 @@ class UserHandlerTest {
   fun `simple test or route get users`() {
     val routerConfig = RouterConfig()
     val greetHandler = GreetHandler()
-    val createContext = CreateContext()
+    val createRequestData = CreateRequestData()
     val userRepository = mockk<UserRepository>()
     coEvery { userRepository.all() } returns flow {
         emit(User(1, "name", 10))
     }
     val userHandler = UserHandler(userRepository)
-    val routerFunction = routerConfig.route(greetHandler, userHandler, createContext)
+    val routerFunction = routerConfig.route(greetHandler, userHandler, createRequestData)
 
     val client = WebTestClient.bindToRouterFunction(routerFunction).build()
 
